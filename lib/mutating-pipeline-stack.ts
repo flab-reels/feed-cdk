@@ -26,8 +26,8 @@ export class MutatingPipelineStack extends Stack {
             )
         });
 
-        const feedInfra = new FeedInfraDeployStage(this, 'Deploy');
-        const deployStage = pipeine.addStage(feedInfra);
+        //const feedInfra = new FeedInfraDeployStage(this, 'Deploy');
+        //const deployStage = pipeine.addStage(feedInfra);
     }
 }
 
