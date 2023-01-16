@@ -22,17 +22,20 @@ export class MutatingPipelineStack extends Stack {
                     'npm run build',
                     'npx cdk synth'
                 ]
-            }
+                }
             )
         });
+
+        const feedInfra = new FeedInfraDeployStage(this, 'Deploy');
+        const deployStage = pipeine.addStage(feedInfra);
     }
 }
 
-// class MyApplication extends Stage {
-//     constructor(scope: Construct, id: string, props?: StageProps) {
-//         super(scope, id, props);
+class FeedInfraDeployStage extends Stage {
+    constructor(scope: Construct, id: string, props?: StageProps) {
+        super(scope, id, props);
 
-//         //const app = new App();
-//         new FeedCdkStack(this, 'FeedCdkStack');
-//     }
-// }
+        //const app = new App();
+        new FeedCdkStack(this, 'FeedCdkStack');
+    }
+}
