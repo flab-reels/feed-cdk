@@ -95,9 +95,7 @@ export class FeedCdkStack extends Stack {
 		// initialize repository
 		// Lookup existing resources
 		const repo = Repository.fromRepositoryName(this, 'Repo', 'sample-base-repo');
-		const repo2 = new Repository(this, 'feed-repo', {
-			repositoryName : 'feed-repo'
-		})
+
 		// create security group
 		const service_sg = new SecurityGroup(this, 'feed-sg', {
 			securityGroupName : 'feed-sg',
