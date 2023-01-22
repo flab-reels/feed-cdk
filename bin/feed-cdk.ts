@@ -5,3 +5,4 @@ import { MutatingPipelineStack } from '../lib/mutating-pipeline-stack';
 
 const app = new cdk.App();
 new MutatingPipelineStack(app, 'MutatingPipelineStack');
+//new FeedCdkStack(app, 'FeedInfraStack');

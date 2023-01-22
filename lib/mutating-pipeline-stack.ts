@@ -2,13 +2,14 @@ import { SecretValue, Stack, StackProps, Stage, StageProps } from "aws-cdk-lib";
 import { EventAction, FilterGroup, Source } from "aws-cdk-lib/aws-codebuild";
 import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from "aws-cdk-lib/pipelines";
 import { Construct } from "constructs";
+import { DeployPipelineStack } from "./deploy-pipeline-stack";
 import { FeedCdkStack } from "./feed-cdk-stack";
 
 export class MutatingPipelineStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
         
-        const pipeine = new CodePipeline(this, 'MutatingPipeline', {
+        const pipeline = new CodePipeline(this, 'MutatingPipeline', {
             pipelineName: 'FeedMutatingPipeline',
             synth : new CodeBuildStep('SynthStep', {
                 input : CodePipelineSource.gitHub('flab-reels/feed-cdk', 'main', {
@@ -26,8 +27,14 @@ export class MutatingPipelineStack extends Stack {
             )
         });
 
-        //const feedInfra = new FeedInfraDeployStage(this, 'Deploy');
-        //const deployStage = pipeine.addStage(feedInfra);
+        const feedInfra = new FeedInfraDeployStage(this, 'FeedInfra', {
+            stageName : 'FeedInfra'
+        });
+        // const feedPipeline = new FeedInfraDeployStage(this, 'FeedPipeline', {
+        //     stageName : 'FeedPipeline'
+        // })
+        pipeline.addStage(feedInfra);
+        // pipeline.addStage(feedPipeline);   
     }
 }
 
@@ -36,6 +43,19 @@ class FeedInfraDeployStage extends Stage {
         super(scope, id, props);
 
         //const app = new App();
-        new FeedCdkStack(this, 'FeedCdkStack');
+        new FeedCdkStack(this, 'FeedCdkStack', {
+            stackName : "FeedCdkStack"
+        });
+    }
+}
+
+class FeedPipelineStage extends Stage {
+    constructor(scope: Construct, id: string, props?: StageProps) {
+        super(scope, id, props);
+
+        //const app = new App();
+        new DeployPipelineStack(this, 'DeployPipelineStack', {
+            stackName : "DeployPipelineStack"
+        });
     }
 }

@@ -1,6 +1,6 @@
 import { Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { EcsApplication, EcsDeploymentConfig, EcsDeploymentGroup } from 'aws-cdk-lib/aws-codedeploy';
-import { Peer, Port, SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { GatewayVpcEndpointAwsService, InterfaceVpcEndpoint, InterfaceVpcEndpointAwsService, Peer, Port, SecurityGroup, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { AwsLogDriver, AwsLogDriverMode, Cluster, ContainerImage, DeploymentControllerType, FargateService, FargateTaskDefinition, PropagatedTagSource } from 'aws-cdk-lib/aws-ecs';
 import { NetworkLoadBalancer, NetworkTargetGroup, Protocol, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
@@ -19,10 +19,32 @@ export class FeedCdkStack extends Stack {
 		const cluster = new Cluster(this, "feed-cluster", {
 			vpc: vpc
 		});
+
+		// create vpc endpoints for ecr
+		vpc.addInterfaceEndpoint('ecr-endpoint', {
+			service : InterfaceVpcEndpointAwsService.ECR,
+			privateDnsEnabled : true,
+		})
+
+		vpc.addInterfaceEndpoint('dkr-endpoint', {
+			service : InterfaceVpcEndpointAwsService.ECR_DOCKER,
+			privateDnsEnabled : true,
+		})
+
+		// cloudwatch
+		vpc.addInterfaceEndpoint('awslog', {
+			service : InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
+			privateDnsEnabled : true
+		})
+
+		// add s3 gateway since ECR uses s3 to store images
+		vpc.addGatewayEndpoint('s3-endpoint', {
+			service : GatewayVpcEndpointAwsService.S3
+		})
 		
 		const nlb = new NetworkLoadBalancer(this, 'feed-nlb', {
 			vpc,
-			internetFacing: true
+			internetFacing: false
 		})
 
 		const tg1 = new NetworkTargetGroup(this, 'feed-tg-blue', {
@@ -106,6 +128,7 @@ export class FeedCdkStack extends Stack {
 			taskDefinition,
 			securityGroups: [service_sg],
 			desiredCount: 1,
+			assignPublicIp : false,
 			deploymentController: {
 			type: DeploymentControllerType.CODE_DEPLOY,
 			},
