@@ -33,9 +33,10 @@ export class MutatingPipelineStack extends Stack {
         });
 
         // builds code pipeline
-        const feedPipeline = new FeedInfraDeployStage(this, 'FeedPipeline', {
+        const feedPipeline = new FeedPipelineStage(this, 'FeedPipeline', {
             stageName : 'FeedPipeline'
         })
+
         pipeline.addStage(feedInfra);
         pipeline.addStage(feedPipeline);   
     }
