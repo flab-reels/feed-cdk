@@ -12,11 +12,13 @@ export class FeedCdkStack extends Stack {
 
 		// create new vpc
 		const vpc = new Vpc(this, 'feed-vpc', {
+			vpcName : "feed-vpc",
 			maxAzs : 2,
 			natGateways : 0
 		})
 
 		const cluster = new Cluster(this, "feed-cluster", {
+			clusterName : 'feed-cluster',
 			vpc: vpc
 		});
 
@@ -43,6 +45,7 @@ export class FeedCdkStack extends Stack {
 		})
 		
 		const nlb = new NetworkLoadBalancer(this, 'feed-nlb', {
+			loadBalancerName : 'feed-nlb',
 			vpc,
 			internetFacing: false
 		})
@@ -92,10 +95,13 @@ export class FeedCdkStack extends Stack {
 		// initialize repository
 		// Lookup existing resources
 		const repo = Repository.fromRepositoryName(this, 'Repo', 'sample-base-repo');
-
+		const repo2 = new Repository(this, 'feed-repo', {
+			repositoryName : 'feed-repo'
+		})
 		// create security group
-		const service_sg = new SecurityGroup(this, 'sample-comment-service-sg', {
-			description: 'Security group for comment service',
+		const service_sg = new SecurityGroup(this, 'feed-sg', {
+			securityGroupName : 'feed-sg',
+			description: 'Security group for feed service',
 			vpc: cluster.vpc,
 		});
 

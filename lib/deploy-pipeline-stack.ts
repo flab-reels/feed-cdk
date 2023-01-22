@@ -1,6 +1,8 @@
 import { SecretValue, Stack, StackProps } from "aws-cdk-lib";
+import { PipelineProject, BuildSpec, LinuxBuildImage } from "aws-cdk-lib/aws-codebuild";
 import { Artifact, Pipeline } from "aws-cdk-lib/aws-codepipeline";
 import { GitHubSourceAction } from "aws-cdk-lib/aws-codepipeline-actions";
+import { Repository } from "aws-cdk-lib/aws-ecr";
 import { Construct } from "constructs";
 
 export class DeployPipelineStack extends Stack {
@@ -28,26 +30,26 @@ export class DeployPipelineStack extends Stack {
             actions : [sourceAction]
         })
 
-        // const repo = Repository.fromRepositoryName(this, 'Repo', 'sample-base-repo');
-        // // Build
-        // const buildProject = new PipelineProject(this, 'SampleBuildProject', {
-        //     buildSpec: BuildSpec.fromSourceFilename('infra/buildspec.yml'),
-        //     environment: {
-        //         buildImage: LinuxBuildImage.STANDARD_5_0,
-        //         privileged: true
-        //     },
-        //     environmentVariables : {
-        //         ACCOUNT_ID: {
-        //             value: this.account
-        //         },
-        //         ACCOUNT_REGION: {
-        //             value: this.region
-        //         },
-        //         REPOSITORY_URI : {
-        //             value : repo.repositoryUri
-        //         },
-        //     }
-        // });
+        const repo = Repository.fromRepositoryName(this, 'Repo', 'feed-repo');
+        // Build
+        const buildProject = new PipelineProject(this, 'SampleBuildProject', {
+            buildSpec: BuildSpec.fromSourceFilename('infra/buildspec.yml'),
+            environment: {
+                buildImage: LinuxBuildImage.STANDARD_5_0,
+                privileged: true
+            },
+            environmentVariables : {
+                ACCOUNT_ID: {
+                    value: this.account
+                },
+                ACCOUNT_REGION: {
+                    value: this.region
+                },
+                REPOSITORY_URI : {
+                    value : repo.repositoryUri
+                },
+            }
+        });
 
         // buildProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryPowerUser'));
         // buildProject.addToRolePolicy(new PolicyStatement({
