@@ -27,9 +27,12 @@ export class MutatingPipelineStack extends Stack {
             )
         });
 
+        // builds vpc, ecs service, nlb, deploymentgroup
         const feedInfra = new FeedInfraDeployStage(this, 'FeedInfra', {
             stageName : 'FeedInfra'
         });
+
+        // builds code pipeline
         const feedPipeline = new FeedInfraDeployStage(this, 'FeedPipeline', {
             stageName : 'FeedPipeline'
         })
