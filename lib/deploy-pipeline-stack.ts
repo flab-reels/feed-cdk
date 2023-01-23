@@ -1,7 +1,8 @@
 import { SecretValue, Stack, StackProps } from "aws-cdk-lib";
 import { PipelineProject, BuildSpec, LinuxBuildImage } from "aws-cdk-lib/aws-codebuild";
-import { Artifact, Pipeline } from "aws-cdk-lib/aws-codepipeline";
-import { CodeBuildAction, GitHubSourceAction } from "aws-cdk-lib/aws-codepipeline-actions";
+import { EcsApplication, EcsDeploymentGroup, EcsDeploymentConfig } from "aws-cdk-lib/aws-codedeploy";
+import { Artifact, ArtifactPath, Pipeline } from "aws-cdk-lib/aws-codepipeline";
+import { CodeBuildAction, CodeDeployEcsDeployAction, GitHubSourceAction } from "aws-cdk-lib/aws-codepipeline-actions";
 import { Repository } from "aws-cdk-lib/aws-ecr";
 import { ManagedPolicy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
@@ -91,5 +92,40 @@ export class DeployPipelineStack extends Stack {
             stageName : 'Build',
             actions : [buildAction]
         })
+
+        const myApplication = EcsApplication.fromEcsApplicationName(this, 'CodeDeployApplication', 'feed-ecs-application');
+
+        // add deploy stage
+        const deploymentGroup = EcsDeploymentGroup.fromEcsDeploymentGroupAttributes(
+            pipeline, 'feed-deployment-group', {
+                application: myApplication,
+                deploymentGroupName: 'feed-deployment-group',
+                deploymentConfig: EcsDeploymentConfig.ALL_AT_ONCE,
+        });
+
+        const deployAction = new CodeDeployEcsDeployAction({
+            actionName: 'Deploy',
+            deploymentGroup,
+            taskDefinitionTemplateFile:
+                new ArtifactPath(buildArtifact, `task-definition-sample.json`),
+            /**
+             * Create a file named appspec.yaml with the following contents. 
+             * For TaskDefinition, do not change the <TASK_DEFINITION> placeholder text. 
+             * This value is updated when your pipeline runs.
+             */
+            appSpecTemplateFile:
+                new ArtifactPath(buildArtifact, `appspec-sample.json`),
+            containerImageInputs: [{
+                input: imageDetailsArtifact,
+                // The placeholder string in the ECS task definition template file 
+                // that will be replaced with the image URI.
+                taskDefinitionPlaceholder: 'PLACEHOLDER' 
+            }]
+        })
+
+        pipeline.addStage({
+            stageName : 'Deploy',
+            actions: [deployAction]
+        });
     }
 }
