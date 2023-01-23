@@ -1,8 +1,9 @@
 import { SecretValue, Stack, StackProps } from "aws-cdk-lib";
 import { PipelineProject, BuildSpec, LinuxBuildImage } from "aws-cdk-lib/aws-codebuild";
 import { Artifact, Pipeline } from "aws-cdk-lib/aws-codepipeline";
-import { GitHubSourceAction } from "aws-cdk-lib/aws-codepipeline-actions";
+import { CodeBuildAction, GitHubSourceAction } from "aws-cdk-lib/aws-codepipeline-actions";
 import { Repository } from "aws-cdk-lib/aws-ecr";
+import { ManagedPolicy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
 
 export class DeployPipelineStack extends Stack {
@@ -32,7 +33,7 @@ export class DeployPipelineStack extends Stack {
 
         const repo = Repository.fromRepositoryName(this, 'Repo', 'feed-repo');
         // Build
-        const buildProject = new PipelineProject(this, 'SampleBuildProject', {
+        const buildProject = new PipelineProject(this, 'FeedBuildProject', {
             buildSpec: BuildSpec.fromSourceFilename('infra/buildspec.yml'),
             environment: {
                 buildImage: LinuxBuildImage.STANDARD_5_0,
@@ -51,44 +52,44 @@ export class DeployPipelineStack extends Stack {
             }
         });
 
-        // buildProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryPowerUser'));
-        // buildProject.addToRolePolicy(new PolicyStatement({
-        //     actions: [
-        //         'cloudformation:DescribeStackResources'
-        //     ],
-        //     resources: ['*']
-        // }));
+        buildProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryPowerUser'));
+        buildProject.addToRolePolicy(new PolicyStatement({
+            actions: [
+                'cloudformation:DescribeStackResources'
+            ],
+            resources: ['*']
+        }));
 
-        // buildProject.addToRolePolicy(new PolicyStatement({
-        //     actions: ["ecr:GetAuthorizationToken",
-        //         "ecr:BatchCheckLayerAvailability",
-        //         "ecr:GetDownloadUrlForLayer",
-        //         "ecr:GetRepositoryPolicy",
-        //         "ecr:DescribeRepositories",
-        //         "ecr:ListImages",
-        //         "ecr:DescribeImages",
-        //         "ecr:BatchGetImage",
-        //         "ecr:InitiateLayerUpload",
-        //         "ecr:UploadLayerPart",
-        //         "ecr:CompleteLayerUpload",
-        //         "ecr:PutImage"
-        //     ],
-        //     resources: ["*"]
-        // }));
+        buildProject.addToRolePolicy(new PolicyStatement({
+            actions: ["ecr:GetAuthorizationToken",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:GetRepositoryPolicy",
+                "ecr:DescribeRepositories",
+                "ecr:ListImages",
+                "ecr:DescribeImages",
+                "ecr:BatchGetImage",
+                "ecr:InitiateLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:CompleteLayerUpload",
+                "ecr:PutImage"
+            ],
+            resources: ["*"]
+        }));
 
-        // // initialize build action
-        // const buildArtifact = new Artifact('BuildArtifact');
-        // const imageDetailsArtifact = new Artifact('ImageDetails');
-        // const buildAction = new CodeBuildAction({
-        //     actionName : 'Comment_CodeBuild',
-        //     project : buildProject,
-        //     input : sourceOutput,
-        //     outputs : [buildArtifact, imageDetailsArtifact]
-        // })
+        // initialize build action
+        const buildArtifact = new Artifact('BuildArtifact');
+        const imageDetailsArtifact = new Artifact('ImageDetails');
+        const buildAction = new CodeBuildAction({
+            actionName : 'Comment_CodeBuild',
+            project : buildProject,
+            input : sourceOutput,
+            outputs : [buildArtifact, imageDetailsArtifact]
+        })
 
-        // pipeline.addStage({
-        //     stageName : 'Build',
-        //     actions : [buildAction]
-        // })
+        pipeline.addStage({
+            stageName : 'Build',
+            actions : [buildAction]
+        })
     }
 }
