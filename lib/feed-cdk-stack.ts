@@ -1,9 +1,12 @@
 import { Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { EcsApplication, EcsDeploymentConfig, EcsDeploymentGroup } from 'aws-cdk-lib/aws-codedeploy';
-import { GatewayVpcEndpointAwsService, InterfaceVpcEndpoint, InterfaceVpcEndpointAwsService, Peer, Port, SecurityGroup, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { CodeDeployEcsDeployAction } from 'aws-cdk-lib/aws-codepipeline-actions';
+import { FlowLog, FlowLogDestination, FlowLogResourceType, GatewayVpcEndpointAwsService, InterfaceVpcEndpoint, InterfaceVpcEndpointAwsService, Peer, Port, SecurityGroup, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { AwsLogDriver, AwsLogDriverMode, Cluster, ContainerImage, DeploymentControllerType, FargateService, FargateTaskDefinition, PropagatedTagSource } from 'aws-cdk-lib/aws-ecs';
 import { NetworkLoadBalancer, NetworkTargetGroup, Protocol, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { LogGroup } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
 export class FeedCdkStack extends Stack {
@@ -55,7 +58,11 @@ export class FeedCdkStack extends Stack {
 			port : 80,
 			protocol : Protocol.TCP,
 			vpc : vpc,
-			targetType : TargetType.IP
+			targetType : TargetType.IP,
+			healthCheck : {
+                protocol:Protocol.TCP,
+                port:"8080"
+            }
 		})
 
 		const tg2 = new NetworkTargetGroup(this, 'feed-tg-green', {
@@ -63,7 +70,11 @@ export class FeedCdkStack extends Stack {
 			port : 80,
 			protocol : Protocol.TCP,
 			vpc : vpc,
-			targetType : TargetType.IP
+			targetType : TargetType.IP,
+			healthCheck : {
+                protocol:Protocol.TCP,
+                port:"8080"
+            }
 		})
 
 		// Listeners:
@@ -94,8 +105,8 @@ export class FeedCdkStack extends Stack {
 
 		// initialize repository
 		// Lookup existing resources
-		const repo = Repository.fromRepositoryName(this, 'Repo', 'sample-base-repo');
-
+		const repo = Repository.fromRepositoryName(this, 'Repo', 'feed-repo');
+		
 		// create security group
 		const service_sg = new SecurityGroup(this, 'feed-sg', {
 			securityGroupName : 'feed-sg',
@@ -115,7 +126,7 @@ export class FeedCdkStack extends Stack {
 
 		taskDefinition.addContainer('feed-container', {
 			containerName: "feed-container",
-			image: ContainerImage.fromEcrRepository(repo, 'latest'),
+			image: ContainerImage.fromEcrRepository(repo, 'starter'),
 			portMappings :[{
 				containerPort : 8080,
 				hostPort :8080
@@ -139,6 +150,9 @@ export class FeedCdkStack extends Stack {
 			propagateTags: PropagatedTagSource.SERVICE,
 		});
 		service.attachToNetworkTargetGroup(tg1);
+		const repo2 = Repository.fromRepositoryName(this, 'Repo', 'feed-repo');
+	
+
 
 		// const ecsApplication = codedeploy.EcsApplication.fromEcsApplicationName(
 		//     this,
@@ -146,11 +160,12 @@ export class FeedCdkStack extends Stack {
 		//     Fn.importValue(props.infrastructureStackName + 'CodeDeployApplication'),
 		// );
 
+		// code deploy application
 		const ecsApplication = new EcsApplication(this, "feed-ecs-application", {
 			applicationName : 'feed-ecs-application'
 		});
-		
-		new EcsDeploymentGroup(this, 'feed-deployment-group', {
+
+		const group = new EcsDeploymentGroup(this, 'feed-deployment-group', {
 			application: ecsApplication,
 			deploymentGroupName: 'feed-deployment-group',
 			deploymentConfig : EcsDeploymentConfig.ALL_AT_ONCE,
@@ -163,7 +178,7 @@ export class FeedCdkStack extends Stack {
 			},
 			autoRollback: {
 				stoppedDeployment: true,
-			},
+			}
 		});
 		
 		
