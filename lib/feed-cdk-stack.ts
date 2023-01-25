@@ -105,7 +105,7 @@ export class FeedCdkStack extends Stack {
 
 		// initialize repository
 		// Lookup existing resources
-		const repo = Repository.fromRepositoryName(this, 'Repo', 'feed-repo');
+		const repo = Repository.fromRepositoryName(this, 'Feed-Repo', 'feed-repo');
 		
 		// create security group
 		const service_sg = new SecurityGroup(this, 'feed-sg', {
@@ -150,7 +150,6 @@ export class FeedCdkStack extends Stack {
 			propagateTags: PropagatedTagSource.SERVICE,
 		});
 		service.attachToNetworkTargetGroup(tg1);
-		const repo2 = Repository.fromRepositoryName(this, 'Repo', 'feed-repo');
 	
 
 
