@@ -148,6 +148,10 @@ export class FeedCdkStack extends Stack {
 			})
 		)
 
+		const myLogGroup = new LogGroup(this, 'feed-log-group', {
+			logGroupName : 'feed-log-group'	
+		})
+		
 		taskDefinition.addContainer('feed-container', {
 			containerName: "feed-container",
 			image: ContainerImage.fromEcrRepository(repo, 'starter'),
@@ -157,10 +161,12 @@ export class FeedCdkStack extends Stack {
 			}],
 			logging : new AwsLogDriver({
 				streamPrefix: 'feed-service',
+				logGroup : myLogGroup,
 				mode: AwsLogDriverMode.NON_BLOCKING
 			})
 		});
 
+	
 		const service = new FargateService(this, 'feed-service', {
 			serviceName: "feed-service",
 			cluster,
