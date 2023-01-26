@@ -33,6 +33,7 @@ export class DeployPipelineStack extends Stack {
         })
 
         const repo = Repository.fromRepositoryName(this, 'Repo', 'feed-repo');
+        
         // Build
         const buildProject = new PipelineProject(this, 'FeedBuildProject', {
             buildSpec: BuildSpec.fromSourceFilename('infra/buildspec.yml'),
@@ -94,7 +95,7 @@ export class DeployPipelineStack extends Stack {
         })
 
         const myApplication = EcsApplication.fromEcsApplicationName(this, 'CodeDeployApplication', 'feed-ecs-application');
-
+        
         // add deploy stage
         const deploymentGroup = EcsDeploymentGroup.fromEcsDeploymentGroupAttributes(
             pipeline, 'feed-deployment-group', {
