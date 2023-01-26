@@ -46,6 +46,11 @@ export class FeedCdkStack extends Stack {
 		vpc.addGatewayEndpoint('s3-endpoint', {
 			service : GatewayVpcEndpointAwsService.S3
 		})
+
+		vpc.addInterfaceEndpoint('nlb-endpoint', {
+			service : InterfaceVpcEndpointAwsService.ELASTIC_LOAD_BALANCING,
+			privateDnsEnabled : true
+		})
 		
 		const nlb = new NetworkLoadBalancer(this, 'feed-nlb', {
 			loadBalancerName : 'feed-nlb',
