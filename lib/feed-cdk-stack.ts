@@ -5,7 +5,7 @@ import { FlowLog, FlowLogDestination, FlowLogResourceType, GatewayVpcEndpointAws
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { AwsLogDriver, AwsLogDriverMode, Cluster, ContainerImage, DeploymentControllerType, FargateService, FargateTaskDefinition, PropagatedTagSource } from 'aws-cdk-lib/aws-ecs';
 import { NetworkLoadBalancer, NetworkTargetGroup, Protocol, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { Effect, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
@@ -124,6 +124,25 @@ export class FeedCdkStack extends Stack {
 			cpu: 256,
 		});
 
+		const taskExecutionRole = new Role(this, 'feedTaskExecRole', {
+			assumedBy : new ServicePrincipal('ecs-tasks.amazonaws.com')
+		})
+
+		taskExecutionRole.addToPolicy(
+			new PolicyStatement({
+				effect: Effect.ALLOW,
+				resources: ['*'],
+				actions: [
+					'ecr:GetAuthorizationToken',
+					'ecr:BatchCheckLayerAvailability',
+					'ecr:GetDownloadUrlForLayer',
+					'ecr:BatchGetImage',
+					'logs:CreateLogStream',
+					'logs:PutLogEvents'
+				]
+			})
+		)
+
 		taskDefinition.addContainer('feed-container', {
 			containerName: "feed-container",
 			image: ContainerImage.fromEcrRepository(repo, 'starter'),
@@ -179,7 +198,5 @@ export class FeedCdkStack extends Stack {
 				stoppedDeployment: true,
 			}
 		});
-		
-		
 	}
 }
